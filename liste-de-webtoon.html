@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recherche de Webtoons</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #3498db;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+            margin-top: 20px;
+            color: #fff;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            margin: 20px auto;
+            display: block;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+        }
+
+        #searchResults {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            background-color: #2980b9;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        li.selected {
+            background-color: #2ecc71;
+        }
+
+        li:hover {
+            background-color: #1abc9c;
+        }
+
+        li strong {
+            color: #fff;
+        }
+
+        #liste-titres {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Recherche de Webtoons</h1>
+
+    <h2>Recherche de Webtoons</h2>
+
+    <h3>Voici la signification de chaque abréviation à titre de référence :
+(OH) Plus de 100 chapitres -
+(UH) Moins de 100 chapitres -
+(C) Terminé -
+(RH) Fortement recommandé (R) Recommandé -
+(G) Bien -
+(D) Décent -
+(M) Moi
+</h3>
+    <input type="text" id="searchInput" placeholder="Entrez le titre du webtoon">
+    <div id="searchResults"></div>
+
+    <h2>Ajouter un ou plusieurs nouveaux Webtoons</h2>
+    <input type="text" id="newWebtoonInput" placeholder="Entrez les titres des nouveaux webtoons séparés par des virgules">
+    <button id="addWebtoonBtn">Ajouter</button>
+
+    <h2>Liste des Webtoons</h2>
+    <button id="toggleListBtn">Afficher/Masquer la liste</button>
+    <ul id="liste-titres">
+        <!-- Les titres sélectionnés seront ajoutés ici -->
+    </ul>
+    <button id="deleteSelectedBtn">Supprimer les webtoons sélectionnés</button>
+
+    <script>
+        let webtoons = []; // Initialisation de la liste des webtoons
+
+        // Fonction pour enregistrer les données dans le stockage local
+        function storeWebtoons(webtoons) {
+            localStorage.setItem('webtoons', JSON.stringify(webtoons));
+        }
+
+        // Fonction pour mettre à jour la liste des webtoons
+        function updateList(webtoons) {
+            const listeTitres = document.getElementById('liste-titres');
+            listeTitres.innerHTML = ''; // Effacer la liste actuelle
+            webtoons.forEach(webtoon => {
+                const listItem = document.createElement('li');
+                listItem.textContent = webtoon.title;
+                listeTitres.appendChild(listItem);
+            });
+            storeWebtoons(webtoons); // Enregistrer les webtoons mis à jour
+        }
+
+        // Charger les webtoons depuis le stockage local au chargement de la page
+        window.addEventListener('load', () => {
+            const storedWebtoons = localStorage.getItem('webtoons');
+            if (storedWebtoons) {
+                webtoons = JSON.parse(storedWebtoons);
+                updateList(webtoons); // Mettre à jour la liste des webtoons au chargement de la page
+            }
+        });
+
+        // Gérer l'ajout d'un ou plusieurs nouveaux webtoons
+        document.getElementById('addWebtoonBtn').addEventListener('click', () => {
+            const newWebtoonTitles = document.getElementById('newWebtoonInput').value.split(',').map(title => title.trim());
+            newWebtoonTitles.forEach(title => {
+                if (title !== '') {
+                    webtoons.push({ title: title, abbr: '' });
+                }
+            });
+            updateList(webtoons); // Mettre à jour la liste des webtoons
+            document.getElementById('newWebtoonInput').value = ''; // Effacer le champ de saisie
+        });
+
+        // Gérer la suppression des webtoons sélectionnés
+        document.getElementById('deleteSelectedBtn').addEventListener('click', () => {
+            const selectedItems = document.querySelectorAll('#liste-titres li.selected');
+            selectedItems.forEach(item => {
+                const index = Array.from(document.getElementById('liste-titres').children).indexOf(item);
+                webtoons.splice(index, 1);
+            });
+            updateList(webtoons); // Mettre à jour la liste des webtoons
+        });
+
+        // Gérer l'affichage/masquage de la liste
+        document.getElementById('toggleListBtn').addEventListener('click', () => {
+            const listeTitres = document.getElementById('liste-titres');
+            listeTitres.classList.toggle('hidden');
+        });
+
+        // Gérer la sélection/désélection des éléments de la liste
+        document.getElementById('liste-titres').addEventListener('click', (event) => {
+            if (event.target.tagName === 'LI') {
+                event.target.classList.toggle('selected');
+            }
+        });
+
+        // Fonction pour mettre à jour les résultats de recherche
+        function updateSearchResults(filteredWebtoons) {
+            const searchResults = document.getElementById('searchResults');
+            searchResults.innerHTML = '';
+
+            if (filteredWebtoons.length === 0 || searchInput.value === '') {
+                const noResult = document.createElement('div');
+                noResult.textContent = 'Aucun résultat';
+                searchResults.appendChild(noResult); // Afficher "Aucun résultat" lorsque la recherche ne donne aucun résultat
+            } else {
+                filteredWebtoons.forEach(webtoon => {
+                    const result = document.createElement('div');
+                    result.textContent = `${webtoon.title} ${webtoon.abbr}`;
+                    result.addEventListener('click', () => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = webtoon.title;
+                        document.getElementById('liste-titres').appendChild(listItem);
+                        webtoons.push({ title: webtoon.title, abbr: webtoon.abbr });
+                        updateList(webtoons); // Mettre à jour la liste des webtoons
+                        searchResults.innerHTML = ''; // Effacer les résultats de recherche
+                    });
+                    searchResults.appendChild(result);
+                });
+            }
+        }
+
+        // Gérer l'événement de recherche
+        document.getElementById('searchInput').addEventListener('input', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredWebtoons = webtoons.filter(webtoon => {
+                return webtoon.title.toLowerCase().includes(searchTerm);
+            });
+
+            updateSearchResults(filteredWebtoons);
+        });
+    </script>
+</body>
+</html>
